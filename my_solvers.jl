@@ -110,5 +110,5 @@ for i in N-1:-1:1
     end
     variables[i] = variables[i]/u[i,i]
 end
-matrix
+matrixd
 
