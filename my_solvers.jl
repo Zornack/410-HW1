@@ -1,26 +1,33 @@
 using LinearAlgebra
 
-function upper_triangulate(A)
+function upper_triangulate!(A, LTM)
 
     for j = 1:N
         pivot!(A,j)
-        eliminate!(A, j)
+        LTM = eliminate!(A, j, LTM)
     end
 
-    return M
+    return LTM
 end
 
-function eliminate!(A, j)
-
+function eliminate!(A, j, LTM)
     pivot = A[j, j]
     pivot_row = A[j, :]
 
+    if(size(pivotMatricies)[1] > 1)
+        LTM = pivotMatricies[size(pivotMatricies)[1]] * LTM
+    end
+
     for k = j+1:M
         fac = A[k, j]/pivot
+        LTM[k,j] = fac
         A[k, :] = A[k, :] - fac*pivot_row
     end
 
+    return LTM
+
 end
+
 
 function pivot!(A,j)
     pivot = A[j,j]
@@ -38,6 +45,9 @@ function pivot!(A,j)
         swap!(pivotMatrix, pivot_row, new_pivot_row)
         push!(pivotMatricies, pivotMatrix)
         swap!(A,pivot_row,new_pivot_row)
+    else
+        pivotMatrix = Matrix{Float64}(I, M, N)
+        push!(pivotMatricies, pivotMatrix)
     end
     # temp = pivotMatrix[j,:]
     # pivotMatrix[j,:] = pivotMatrix[pivot_row,:]
@@ -62,20 +72,59 @@ end
 
 function computeLUP(A)
     UTM = copy(A)
-    upper_triangulate(UTM)
+    LTM = zeros(M,N)
+    LTM = upper_triangulate!(UTM,LTM)
     PM = pivotMultiply()
-    LTM = (PM*A)/UTM
+    for i in 1:M
+        LTM[i,i] = 1
+    end
     return UTM, LTM, PM
 end
 
-function LUPsolve(A,b) 
+function backwardsSub(A, b)
+    N = size(A,2)
+    x = zeros(N)
+    for i in N:-1:1
+        x[i] = b[i]
+        for j in i+1:1:N
+            x[i] = x[i]-A[i,j]*x[j]
+        end
+        x[i] = x[i]/A[i,i]
+    end
+    return x
 end
 
-A = Float64[-2 2 -1; 6 -6 7; 3 -8 4]
+function forwardsSub(A, b)
+    N = size(A,2)
+    x = zeros(N)
+    for i in 1:N
+        x[i] = b[i]
+        for j in i-1:-1:1
+            x[i] = x[i]-A[i,j]*x[j]
+        end
+        x[i] = x[i]/A[i,i]
+    end
+    return x
+end
+
+function LUPsolve(A,b) 
+    UTM, LTM, PM = computeLUP(A)
+
+end
+
+
+
+
+# A = Float64[-2 2 -1; 6 -6 7; 3 -8 4]
 # A = Float64[1 2 3; 4 5 6; 7 8 0]
+# A = Float64[0 1 2 1; 1 0 0 0; 2 1 2 1; 1 2 4 3]
+# A = Float64[2 1 1 0; 4 3 3 1; 8 7 9 5; 6 7 9 8]
+# A = Float64[2 4 2; 4 -10 2; 1 2 4]
+A = Float64[2 1 1 0; 4 3 3 1; 8 7 9 5; 6 7 9 8]
 M = size(A,1)
 N = size(A,2)
 pivotMatricies = []
+# L = zeros(M,N)
 
 UTM, LTM, PM = computeLUP(A)
 
