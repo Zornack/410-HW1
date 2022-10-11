@@ -1,6 +1,12 @@
-using LinearAlgebra
 
+
+"""
+upper_triangulate!(A, LTM)
+Compute the product of matrices ‘a‘ and ‘b‘ and store in ‘c‘.
+"""
 function upper_triangulate!(A, LTM)
+    M = size(A,1)
+    N = size(A,2)
 
     for j = 1:N
         pivot!(A,j)
@@ -10,7 +16,14 @@ function upper_triangulate!(A, LTM)
     return LTM
 end
 
+
+"""
+eliminate!(A, j, LTM)
+Compute the product of matrices ‘a‘ and ‘b‘ and store in ‘c‘.
+"""
 function eliminate!(A, j, LTM)
+    M = size(A,1)
+    N = size(A,2)
     pivot = A[j, j]
     pivot_row = A[j, :]
 
@@ -30,6 +43,8 @@ end
 
 
 function pivot!(A,j)
+    M = size(A,1)
+    N = size(A,2)
     pivot = A[j,j]
     pivot_row = j
     new_pivot_row = j 
@@ -41,21 +56,22 @@ function pivot!(A,j)
         end
     end
     if(pivot_row != new_pivot_row)
-        pivotMatrix = Matrix{Float64}(I, M, N)
+        pivotMatrix = makeIdentity(M,N)
         swap!(pivotMatrix, pivot_row, new_pivot_row)
         push!(pivotMatricies, pivotMatrix)
         swap!(A,pivot_row,new_pivot_row)
     else
-        pivotMatrix = Matrix{Float64}(I, M, N)
+        pivotMatrix = makeIdentity(M,N)
         push!(pivotMatricies, pivotMatrix)
     end
-    # temp = pivotMatrix[j,:]
-    # pivotMatrix[j,:] = pivotMatrix[pivot_row,:]
-    # pivotMatrix[pivot_row,:] = temp
-    # push!(pivotMatricies, pivotMatrix)
-    # temp = A[j,:]
-    # A[j,:] = A[pivot_row,:]
-    # A[pivot_row,:] = temp
+end
+
+function makeIdentity(m,n)
+    iden = zeros(m,n)
+    for i = 1:m
+        iden[i,i] = 1
+    end
+    return iden
 end
 
 function swap!(A,j,k)
@@ -71,6 +87,8 @@ function pivotMultiply()
 end
 
 function computeLUP(A)
+    M = size(A,1)
+    N = size(A,2)
     UTM = copy(A)
     LTM = zeros(M,N)
     LTM = upper_triangulate!(UTM,LTM)
@@ -82,6 +100,7 @@ function computeLUP(A)
 end
 
 function backwardsSub(A, b)
+    M = size(A,1)
     N = size(A,2)
     x = zeros(N)
     for i in N:-1:1
@@ -95,6 +114,7 @@ function backwardsSub(A, b)
 end
 
 function forwardsSub(A, b)
+    M = size(A,1)
     N = size(A,2)
     x = zeros(N)
     for i in 1:N
@@ -109,9 +129,31 @@ end
 
 function LUPsolve(A,b) 
     UTM, LTM, PM = computeLUP(A)
-
+    y = forwardsSub(LTM, PM*b)
+    x = backwardsSub(UTM, y)
+    return x
 end
 
+function confirmAccuracy(N)
+    B = rand(N,N)
+    A = transpose(B)*B+makeIdentity(N,N)
+    b = rand(N,1)
+    x = LUPsolve(A,b)
+    result = A*x-b
+    for i = 1:N
+        if result[i] > 0
+            if result[i] < 1e-10
+                result[i] = 0
+            end
+        else
+            if result[i] > -1e-10
+                result[i] = 0
+            end
+        end
+    end
+    @assert result == zeros(N,1)
+
+end
 
 
 
@@ -120,11 +162,35 @@ end
 # A = Float64[0 1 2 1; 1 0 0 0; 2 1 2 1; 1 2 4 3]
 # A = Float64[2 1 1 0; 4 3 3 1; 8 7 9 5; 6 7 9 8]
 # A = Float64[2 4 2; 4 -10 2; 1 2 4]
-A = Float64[2 1 1 0; 4 3 3 1; 8 7 9 5; 6 7 9 8]
-M = size(A,1)
-N = size(A,2)
+# A = Float64[2 1 1 0; 4 3 3 1; 8 7 9 5; 6 7 9 8]
+# A = Float64[6 -2 2; 12 -8 6; 3 -13 3]
+# A = Float64[1 2 4; 2 1 3; 3 2 4]
+# A = Float64[2 1 1 0; 4 3 3 1; 8 7 9 5; 6 7 9 8]
+# A = Float64[2 1 1 0; 4 3 3 1; 8 7 9 5; 6 7 9 8]
+# A = Float64[10 -7 0; -3 2 6; 5 -1 5]
+A = Float64[1 1 1; 0 2 5; 2 5 -1]
+b = Float64[6; -4; 27]
 pivotMatricies = []
 # L = zeros(M,N)
 
-UTM, LTM, PM = computeLUP(A)
+# UTM, LTM, PM = computeLUP(A)
 
+# x = LUPsolve(A,b)
+
+global time1 = 0
+for i=1:5
+    global time1 = time1 + @elapsed confirmAccuracy(10)
+end
+time1 = time1/5
+
+global time2 = 0
+for i=1:5
+    global time2 = time2 + @elapsed confirmAccuracy(100)
+end
+time2 = time2/5
+
+global time3 = 0
+for i=1:5
+    global time3 = time3 + @elapsed confirmAccuracy(1000)
+end
+time3 = time3/5
