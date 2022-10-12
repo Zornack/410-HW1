@@ -128,10 +128,13 @@ function forwardsSub(A, b)
 end
 
 function LUPsolve(A,b) 
+    N = size(A,1)
     UTM, LTM, PM = computeLUP(A)
     y = forwardsSub(LTM, PM*b)
     x = backwardsSub(UTM, y)
     return x
+    @assert LTM*UTM ≈ PM*A
+    (@assert (A*x-b).+1) ≈ (zeros(N,1)+.1)
 end
 
 function testMatrix()
@@ -144,7 +147,10 @@ function confirmAccuracy(N)
     B = rand(N,N)
     A = transpose(B)*B+makeIdentity(N,N)
     b = rand(N,1)
-    return @time LUPsolve(A,b)
+    UTM, LTM, PM = computeLUP(A)
+    x = LUPsolve(A,b)
+    @assert LTM*UTM ≈ PM*A
+    @assert ((A*x-b).+1) ≈ (zeros(N,1).+1)
     # result = A*x-b
     # for i = 1:N
     #     if result[i] > 0
@@ -158,7 +164,7 @@ function confirmAccuracy(N)
     #     end
     # end
     # @assert result == zeros(N,1)
-    return x
+    # return LTM, UTM, PM, A, b, x
 end
 
 
@@ -174,8 +180,8 @@ end
 # A = Float64[2 1 1 0; 4 3 3 1; 8 7 9 5; 6 7 9 8]
 # A = Float64[2 1 1 0; 4 3 3 1; 8 7 9 5; 6 7 9 8]
 # A = Float64[10 -7 0; -3 2 6; 5 -1 5]
-A = Float64[1 1 1; 0 2 5; 2 5 -1]
-b = Float64[6; -4; 27]
+# A = Float64[1 1 1; 0 2 5; 2 5 -1]
+# b = Float64[6; -4; 27]
 pivotMatricies = []
 # L = zeros(M,N)
 
@@ -200,3 +206,7 @@ pivotMatricies = []
 #     global time3 = time3 + @elapsed confirmAccuracy(1000)
 # end
 # time3 = time3/5
+
+# A*x-b ≈ u
+
+# @assert ((A*x-b).+1) ≈ (u.+1)
