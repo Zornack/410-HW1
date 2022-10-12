@@ -134,25 +134,31 @@ function LUPsolve(A,b)
     return x
 end
 
+function testMatrix()
+    B = rand(N,N)
+    A = transpose(B)*B+makeIdentity(N,N)
+    b = rand(N,1)
+    return B,A,B
+end
 function confirmAccuracy(N)
     B = rand(N,N)
     A = transpose(B)*B+makeIdentity(N,N)
     b = rand(N,1)
-    x = LUPsolve(A,b)
-    result = A*x-b
-    for i = 1:N
-        if result[i] > 0
-            if result[i] < 1e-10
-                result[i] = 0
-            end
-        else
-            if result[i] > -1e-10
-                result[i] = 0
-            end
-        end
-    end
-    @assert result == zeros(N,1)
-
+    return @time LUPsolve(A,b)
+    # result = A*x-b
+    # for i = 1:N
+    #     if result[i] > 0
+    #         if result[i] < 1e-10
+    #             result[i] = 0
+    #         end
+    #     else
+    #         if result[i] > -1e-10
+    #             result[i] = 0
+    #         end
+    #     end
+    # end
+    # @assert result == zeros(N,1)
+    return x
 end
 
 
@@ -177,20 +183,20 @@ pivotMatricies = []
 
 # x = LUPsolve(A,b)
 
-global time1 = 0
-for i=1:5
-    global time1 = time1 + @elapsed confirmAccuracy(10)
-end
-time1 = time1/5
+# global time1 = 0
+# for i=1:5
+#     global time1 = time1 + @elapsed confirmAccuracy(10)
+# end
+# time1 = time1/5
 
-global time2 = 0
-for i=1:5
-    global time2 = time2 + @elapsed confirmAccuracy(100)
-end
-time2 = time2/5
+# global time2 = 0
+# for i=1:5
+#     global time2 = time2 + @elapsed confirmAccuracy(100)
+# end
+# time2 = time2/5
 
-global time3 = 0
-for i=1:5
-    global time3 = time3 + @elapsed confirmAccuracy(1000)
-end
-time3 = time3/5
+# global time3 = 0
+# for i=1:5
+#     global time3 = time3 + @elapsed confirmAccuracy(1000)
+# end
+# time3 = time3/5
